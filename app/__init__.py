@@ -1,12 +1,21 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from flask_migrate import Migrate
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 db = SQLAlchemy()
-migrate = Migrate()
 login_manager = LoginManager()
+
+try:
+    from flask_migrate import Migrate
+    migrate = Migrate()
+    MIGRATE_AVAILABLE = True
+except ImportError:
+    MIGRATE_AVAILABLE = False
 
 def create_app():
     app = Flask(__name__, template_folder='../templates', static_folder='../static')
@@ -15,7 +24,8 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     db.init_app(app)
-    migrate.init_app(app, db)
+    if MIGRATE_AVAILABLE:
+        migrate.init_app(app, db)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
 
