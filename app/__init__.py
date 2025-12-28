@@ -33,7 +33,7 @@ def create_app():
     app.config['SECRET_KEY'] = secret_key
     # Ensure PostgreSQL URL uses correct dialect
     if database_url.startswith('postgresql://'):
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url.replace('postgresql://', 'postgresql+pg8000://', 1)
     else:
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
