@@ -31,7 +31,11 @@ def create_app():
         raise ValueError("DATABASE_URL environment variable is required")
 
     app.config['SECRET_KEY'] = secret_key
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    # Ensure PostgreSQL URL uses correct dialect
+    if database_url.startswith('postgresql://'):
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     db.init_app(app)
