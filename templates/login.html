@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <h2 style="font-size: 1.4rem;">Login</h2>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="mb-2">
+                {{ form.username.label(class="form-label", style="font-size: 0.875rem;") }}
+                {{ form.username(class="form-control", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+            </div>
+            <div class="mb-2">
+                {{ form.password.label(class="form-label", style="font-size: 0.875rem;") }}
+                {{ form.password(class="form-control", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+            </div>
+            {{ form.submit(class="btn btn-primary", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+        </form>
+    </div>
+</div>
+{% endblock %}

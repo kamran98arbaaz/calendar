@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="text-center mb-4" style="font-size: 1.4rem;">{{ hall.name }}</h1>
+<h3 class="text-center text-muted mb-4" style="font-size: 1.1rem;">{{ month_name }} {{ year }}</h3>
+<div class="mb-3">
+    {% set prev_month = month-1 if month > 1 else 12 %}
+    {% set prev_year = year-1 if month == 1 else year %}
+    {% set next_month = month+1 if month < 12 else 1 %}
+    {% set next_year = year+1 if month == 12 else year %}
+    <a href="{{ url_for('main.hall', hall_id=hall.id, year=prev_year, month=prev_month) }}" class="btn btn-secondary">Previous</a>
+    <a href="{{ url_for('main.hall', hall_id=hall.id, year=next_year, month=next_month) }}" class="btn btn-secondary">Next</a>
+</div>
+<div class="calendar-container">
+    <table class="table table-bordered calendar-table">
+        <thead>
+            <tr>
+                <th class="text-center">Mon</th>
+                <th class="text-center">Tue</th>
+                <th class="text-center">Wed</th>
+                <th class="text-center">Thu</th>
+                <th class="text-center">Fri</th>
+                <th class="text-center">Sat</th>
+                <th class="text-center">Sun</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for week in cal %}
+            <tr>
+                {% for day in week %}
+                {% if day == 0 %}
+                <td class="calendar-cell empty"></td>
+                {% else %}
+                {% set date_str = "%04d"|format(year) + '-' + "%02d"|format(month) + '-' + "%02d"|format(day) %}
+                {% set day_booking = booking_dict.get((date_str, 'day')) %}
+                {% set night_booking = booking_dict.get((date_str, 'night')) %}
+                {% set has_booking = day_booking or night_booking %}
+                <td class="calendar-cell">
+                    <div class="day-number">{{ day }}</div>
+                    <table class="slot-table">
+                        <tr>
+                            <td class="slot-cell{% if day_booking %} booked{% endif %}">
+                                <span class="slot-label">D</span>
+                                {% if day_booking %}
+                                <a href="{{ url_for('main.booking_detail', booking_id=day_booking.id) }}" class="slot-link"></a>
+                                {% else %}
+                                <a href="{{ url_for('main.book', hall_id=hall.id, year=year, month=month, day=day) }}?slot=day" class="slot-link"></a>
+                                {% endif %}
+                            </td>
+                            <td class="slot-cell{% if night_booking %} booked{% endif %}">
+                                <span class="slot-label">N</span>
+                                {% if night_booking %}
+                                <a href="{{ url_for('main.booking_detail', booking_id=night_booking.id) }}" class="slot-link"></a>
+                                {% else %}
+                                <a href="{{ url_for('main.book', hall_id=hall.id, year=year, month=month, day=day) }}?slot=night" class="slot-link"></a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="mt-5">
+    <h4 class="text-center mb-4">Booking Statistics</h4>
+    <div class="row text-center">
+        <div class="col-6 col-md-3 mb-2">
+            <a href="{{ url_for('main.hall_bookings_total', hall_id=hall.id) }}?year={{ year }}&month={{ month }}" class="text-decoration-none">
+                <div class="stats-tile">
+                    <div class="h6">{{ total }}</div>
+                    <small>Total</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3 mb-2">
+            <a href="{{ url_for('main.hall_bookings_confirmed', hall_id=hall.id) }}?year={{ year }}&month={{ month }}" class="text-decoration-none">
+                <div class="stats-tile">
+                    <div class="h6 text-success">{{ confirmed }}</div>
+                    <small>Confirmed</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3 mb-2">
+            <a href="{{ url_for('main.hall_bookings_pending', hall_id=hall.id) }}?year={{ year }}&month={{ month }}" class="text-decoration-none">
+                <div class="stats-tile">
+                    <div class="h6 text-warning">{{ pending }}</div>
+                    <small>Pending</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3 mb-2">
+            <a href="{{ url_for('main.hall_bookings_day', hall_id=hall.id) }}?year={{ year }}&month={{ month }}" class="text-decoration-none">
+                <div class="stats-tile">
+                    <div class="h6">{{ day }}</div>
+                    <small>Day</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3 mb-2">
+            <a href="{{ url_for('main.hall_bookings_night', hall_id=hall.id) }}?year={{ year }}&month={{ month }}" class="text-decoration-none">
+                <div class="stats-tile">
+                    <div class="h6">{{ night }}</div>
+                    <small>Night</small>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

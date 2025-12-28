@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-5">
+    <h5 class="text-center mb-3" style="font-size: 1.05rem;">Search Existing Bookings</h5>
+    <form action="{{ url_for('main.search') }}" method="post">
+        <div class="input-group">
+            <input type="text" class="form-control" name="query" placeholder="Enter BID, Client Name, or Phone" required>
+            <button class="btn btn-primary" type="submit">
+                <i class="bi bi-search"></i> Search
+            </button>
+        </div>
+    </form>
+</div>
+<div class="row">
+    {% for hall in halls %}
+    <div class="col-md-6 mb-4">
+        <div class="hall-tile">
+            <h5>{{ hall.name }}</h5>
+            <p class="text-muted mb-3">Professional wedding venue with day and night availability</p>
+            <a href="{{ url_for('main.hall', hall_id=hall.id) }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-calendar-event"></i> View Calendar
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 style="font-size: 1.4rem;">Book {{ hall.name }} on {{ date.strftime('%d %b %Y') }}</h2>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-2">
+        {{ form.client_name.label(class="form-label", style="font-size: 0.875rem;") }}
+        {{ form.client_name(class="form-control", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+    </div>
+    <div class="mb-2">
+        {{ form.phone.label(class="form-label", style="font-size: 0.875rem;") }}
+        {{ form.phone(class="form-control", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+    </div>
+    <div class="mb-2">
+        {{ form.address.label(class="form-label", style="font-size: 0.875rem;") }}
+        {{ form.address(class="form-control", rows=3, style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+    </div>
+    <div class="mb-2">
+        {{ form.time_slot.label(class="form-label", style="font-size: 0.875rem;") }}
+        {{ form.time_slot(class="form-control", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+    </div>
+    {{ form.submit(class="btn btn-primary", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+</form>
+{% endblock %}

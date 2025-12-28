@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Search Results for "{{ query }}"</h2>
+{% if bookings %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>BID</th>
+            <th>Hall</th>
+            <th>Date</th>
+            <th>Time Slot</th>
+            <th>Client</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for booking in bookings %}
+        <tr>
+            <td>{{ booking.bid }}</td>
+            <td>{{ booking.hall.name }}</td>
+            <td>{{ booking.date.strftime('%d %b %Y') }}</td>
+            <td>{{ booking.time_slot.title() }}</td>
+            <td>{{ booking.client_name }}</td>
+            <td><a href="{{ url_for('main.booking_detail', booking_id=booking.id) }}" class="btn btn-sm btn-primary">View</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No bookings found.</p>
+{% endif %}
+{% endblock %}

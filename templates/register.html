@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <h2 style="font-size: 1.4rem;">Register</h2>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="mb-2">
+                {{ form.username.label(class="form-label", style="font-size: 0.875rem;") }}
+                {{ form.username(class="form-control", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+            </div>
+            <div class="mb-2">
+                {{ form.name.label(class="form-label", style="font-size: 0.875rem;") }}
+                {{ form.name(class="form-control", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+            </div>
+            <div class="mb-2">
+                {{ form.password.label(class="form-label", style="font-size: 0.875rem;") }}
+                {{ form.password(class="form-control", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+            </div>
+            <div class="mb-2">
+                {{ form.confirm_password.label(class="form-label", style="font-size: 0.875rem;") }}
+                {{ form.confirm_password(class="form-control", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+            </div>
+            <div class="mb-2">
+                {{ form.role.label(class="form-label", style="font-size: 0.875rem;") }}
+                {{ form.role(class="form-control", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+            </div>
+            <div class="mb-2" id="admin-password" style="display: none;">
+                {{ form.admin_password.label(class="form-label", style="font-size: 0.875rem;") }}
+                {{ form.admin_password(class="form-control", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+            </div>
+            {{ form.submit(class="btn btn-primary", style="font-size: 0.875rem; padding: 0.375rem 0.75rem;") }}
+        </form>
+        <script>
+            document.querySelector('[name=role]').addEventListener('change', function() {
+                document.getElementById('admin-password').style.display = this.value === 'admin' ? 'block' : 'none';
+            });
+        </script>
+    </div>
+</div>
+{% endblock %}

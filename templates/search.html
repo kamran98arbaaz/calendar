@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Search Bookings</h2>
+<form method="POST">
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" name="query" placeholder="Enter BID, Client Name, or Phone" required>
+        <button class="btn btn-outline-secondary" type="submit">Search</button>
+    </div>
+</form>
+{% endblock %}
