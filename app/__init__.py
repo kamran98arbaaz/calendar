@@ -7,6 +7,12 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Import pg8000 to register PostgreSQL dialect
+try:
+    import pg8000
+except ImportError:
+    pass
+
 db = SQLAlchemy()
 login_manager = LoginManager()
 
