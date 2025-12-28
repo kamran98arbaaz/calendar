@@ -5,7 +5,7 @@ from app.models import Booking, Hall, User
 from wtforms import StringField, TextAreaField, SelectField, SubmitField, DateField
 from wtforms.validators import DataRequired
 from flask_wtf import FlaskForm
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timezone, timedelta
 import calendar
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -14,6 +14,9 @@ from reportlab.lib import colors
 from io import BytesIO
 
 main = Blueprint('main', __name__)
+
+# Define IST timezone (UTC+5:30)
+IST = timezone(timedelta(hours=5, minutes=30))
 
 class BookingForm(FlaskForm):
     client_name = StringField('Client Name', validators=[DataRequired()])
@@ -35,7 +38,7 @@ def index():
 @main.route('/hall/<int:hall_id>')
 def hall(hall_id):
     hall = Hall.query.get_or_404(hall_id)
-    today = date.today()
+    today = datetime.now(IST).date()
     year = request.args.get('year', today.year, type=int)
     month = request.args.get('month', today.month, type=int)
     cal = calendar.monthcalendar(year, month)
@@ -81,7 +84,7 @@ def book(hall_id, year, month, day):
             phone=form.phone.data,
             address=form.address.data,
             user_id=current_user.id,
-            created_at=datetime.now()
+            created_at=datetime.now(IST)
         )
         db.session.add(booking)
         db.session.commit()
@@ -123,7 +126,7 @@ def confirm_booking(booking_id):
         flash('Access denied')
         return redirect(url_for('main.index'))
     booking.status = 'confirmed'
-    booking.confirmed_at = datetime.now()
+    booking.confirmed_at = datetime.now(IST)
     db.session.commit()
     flash('Booking confirmed')
     return redirect(url_for('main.booking_detail', booking_id=booking.id))
@@ -151,7 +154,7 @@ def delete_booking(booking_id):
 @login_required
 def hall_bookings_total(hall_id):
     hall = Hall.query.get_or_404(hall_id)
-    today = date.today()
+    today = datetime.now(IST).date()
     year = request.args.get('year', today.year, type=int)
     month = request.args.get('month', today.month, type=int)
     start_date = date(year, month, 1)
@@ -166,7 +169,7 @@ def hall_bookings_total(hall_id):
 @login_required
 def hall_bookings_confirmed(hall_id):
     hall = Hall.query.get_or_404(hall_id)
-    today = date.today()
+    today = datetime.now(IST).date()
     year = request.args.get('year', today.year, type=int)
     month = request.args.get('month', today.month, type=int)
     start_date = date(year, month, 1)
@@ -181,7 +184,7 @@ def hall_bookings_confirmed(hall_id):
 @login_required
 def hall_bookings_pending(hall_id):
     hall = Hall.query.get_or_404(hall_id)
-    today = date.today()
+    today = datetime.now(IST).date()
     year = request.args.get('year', today.year, type=int)
     month = request.args.get('month', today.month, type=int)
     start_date = date(year, month, 1)
@@ -196,7 +199,7 @@ def hall_bookings_pending(hall_id):
 @login_required
 def hall_bookings_day(hall_id):
     hall = Hall.query.get_or_404(hall_id)
-    today = date.today()
+    today = datetime.now(IST).date()
     year = request.args.get('year', today.year, type=int)
     month = request.args.get('month', today.month, type=int)
     start_date = date(year, month, 1)
@@ -211,7 +214,7 @@ def hall_bookings_day(hall_id):
 @login_required
 def hall_bookings_night(hall_id):
     hall = Hall.query.get_or_404(hall_id)
-    today = date.today()
+    today = datetime.now(IST).date()
     year = request.args.get('year', today.year, type=int)
     month = request.args.get('month', today.month, type=int)
     start_date = date(year, month, 1)
