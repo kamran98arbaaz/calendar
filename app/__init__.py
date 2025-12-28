@@ -19,8 +19,19 @@ except ImportError:
 
 def create_app():
     app = Flask(__name__, template_folder='../templates', static_folder='../static')
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'dev-secret-key'
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'sqlite:///calendar.db'
+
+    # Get environment variables
+    secret_key = os.environ.get('SECRET_KEY')
+    database_url = os.environ.get('DATABASE_URL')
+
+    # Validate required environment variables
+    if not secret_key:
+        raise ValueError("SECRET_KEY environment variable is required")
+    if not database_url:
+        raise ValueError("DATABASE_URL environment variable is required")
+
+    app.config['SECRET_KEY'] = secret_key
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     db.init_app(app)
@@ -41,13 +52,8 @@ def create_app():
     from app.auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
+    # Create database tables (but don't seed data in production)
     with app.app_context():
         db.create_all()
-        # Seed halls
-        from app.models import Hall
-        if not Hall.query.first():
-            db.session.add(Hall(name='AR Garden'))
-            db.session.add(Hall(name='Diamond Palace'))
-            db.session.commit()
 
     return app
