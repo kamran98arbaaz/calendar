@@ -3,6 +3,16 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
 import string
+from datetime import datetime, timezone, timedelta
+
+# Define IST timezone (UTC+5:30)
+IST = timezone(timedelta(hours=5, minutes=30))
+
+def current_ist():
+    return datetime.now(IST)
+
+def current_utc():
+    return datetime.utcnow()
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -32,7 +42,7 @@ class Booking(db.Model):
     address = db.Column(db.String(200), nullable=False)
     status = db.Column(db.String(20), nullable=False, default='pending')  # 'confirmed' or 'pending'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    created_at = db.Column(db.DateTime, nullable=False, default=current_utc)
     confirmed_at = db.Column(db.DateTime, nullable=True)
 
     hall = db.relationship('Hall', backref=db.backref('bookings', lazy=True))

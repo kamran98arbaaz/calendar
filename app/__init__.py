@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 import os
 from dotenv import load_dotenv
+from datetime import timezone
 
 # Load environment variables from .env file
 load_dotenv()
@@ -25,6 +26,17 @@ except ImportError:
 
 def create_app():
     app = Flask(__name__, template_folder='../templates', static_folder='../static')
+
+    from app.models import IST
+
+    @app.template_filter('format_datetime')
+    def format_datetime(value):
+        if value.tzinfo is None:
+            # Assume it's in UTC if naive (since we store UTC)
+            value = value.replace(tzinfo=timezone.utc)
+        # Convert to IST
+        value = value.astimezone(IST)
+        return value.strftime('%d %b %Y at %I:%M %p')
 
     # Get environment variables
     secret_key = os.environ.get('SECRET_KEY')

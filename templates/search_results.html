@@ -1,33 +1,54 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Search Results for "{{ query }}"</h2>
-{% if bookings %}
-<table class="table">
-    <thead>
-        <tr>
-            <th>BID</th>
-            <th>Hall</th>
-            <th>Date</th>
-            <th>Time Slot</th>
-            <th>Client</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for booking in bookings %}
-        <tr>
-            <td>{{ booking.bid }}</td>
-            <td>{{ booking.hall.name }}</td>
-            <td>{{ booking.date.strftime('%d %b %Y') }}</td>
-            <td>{{ booking.time_slot.title() }}</td>
-            <td>{{ booking.client_name }}</td>
-            <td><a href="{{ url_for('main.booking_detail', booking_id=booking.id) }}" class="btn btn-sm btn-primary">View</a></td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p>No bookings found.</p>
-{% endif %}
+<div class="max-w-7xl mx-auto">
+    <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">Search Results for "{{ query }}"</h2>
+    {% if bookings %}
+    <div class="bg-white shadow-lg rounded-xl overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-blue-600 text-white">
+                <tr>
+                    <th class="px-6 py-4 text-left font-semibold">BID</th>
+                    <th class="px-6 py-4 text-left font-semibold">Hall</th>
+                    <th class="px-6 py-4 text-left font-semibold">Date</th>
+                    <th class="px-6 py-4 text-left font-semibold">Time Slot</th>
+                    <th class="px-6 py-4 text-left font-semibold">Client</th>
+                    <th class="px-6 py-4 text-left font-semibold">Status</th>
+                    <th class="px-6 py-4 text-left font-semibold">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="px-6 py-4 text-gray-800">{{ booking.bid }}</td>
+                    <td class="px-6 py-4 text-gray-800">{{ booking.hall.name }}</td>
+                    <td class="px-6 py-4 text-gray-800">{{ booking.date.strftime('%d %b %Y') }}</td>
+                    <td class="px-6 py-4 text-gray-800">{{ booking.time_slot.title() }}</td>
+                    <td class="px-6 py-4 text-gray-800">{{ booking.client_name }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded text-sm font-medium
+                            {% if booking.status == 'confirmed' %}bg-green-100 text-green-800{% elif booking.status == 'pending' %}bg-yellow-100 text-yellow-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ booking.status.title() }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex space-x-2">
+                            <a href="{{ url_for('main.booking_detail', booking_id=booking.id) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors duration-200">View</a>
+                            <a href="{{ url_for('main.print_receipt', booking_id=booking.id) }}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors duration-200">Print Receipt</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white shadow-lg rounded-xl p-8 text-center">
+        <div class="text-gray-500 text-lg">No bookings found for "{{ query }}".</div>
+        <div class="mt-4">
+            <i class="bi bi-search text-6xl text-gray-300"></i>
+        </div>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

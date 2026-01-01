@@ -1,29 +1,123 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="mb-5">
-    <h5 class="text-center mb-3" style="font-size: 1.05rem;">Search Existing Bookings</h5>
-    <form action="{{ url_for('main.search') }}" method="post">
-        <div class="input-group">
-            <input type="text" class="form-control" name="query" placeholder="Enter BID, Client Name, or Phone" required>
-            <button class="btn btn-primary" type="submit">
-                <i class="bi bi-search"></i> Search
-            </button>
+<div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Left Column: Search, Mini Calendar, Counters -->
+    <div class="lg:col-span-1 space-y-6">
+        <!-- Search Bookings -->
+        <div class="bg-white shadow-lg rounded-xl p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Search Bookings</h2>
+            <form action="{{ url_for('main.search') }}" method="post">
+                <div class="flex gap-2">
+                    <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" name="query" placeholder="Search by BID, Client Name, or Phone" required>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
         </div>
-    </form>
-</div>
-<div class="row">
-    {% for hall in halls %}
-    <div class="col-md-6 mb-4">
-        <div class="hall-tile">
-            <h5>{{ hall.name }}</h5>
-            <p class="text-muted mb-3">Professional wedding venue with day and night availability</p>
-            <a href="{{ url_for('main.hall', hall_id=hall.id) }}" class="btn btn-primary btn-lg">
-                <i class="bi bi-calendar-event"></i> View Calendar
-            </a>
-        </div>
-    </div>
-    {% endfor %}
-</div>
 
+        <!-- Mini Calendar -->
+        <div class="bg-white shadow-lg rounded-xl p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Calendar - {{ today.strftime('%B %Y') }}</h3>
+            <div class="calendar-container">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="p-2 text-center text-sm font-semibold text-gray-600">M</th>
+                            <th class="p-2 text-center text-sm font-semibold text-gray-600">T</th>
+                            <th class="p-2 text-center text-sm font-semibold text-gray-600">W</th>
+                            <th class="p-2 text-center text-sm font-semibold text-gray-600">T</th>
+                            <th class="p-2 text-center text-sm font-semibold text-gray-600">F</th>
+                            <th class="p-2 text-center text-sm font-semibold text-gray-600">S</th>
+                            <th class="p-2 text-center text-sm font-semibold text-gray-600">S</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for week in calendar.monthcalendar(today.year, today.month) %}
+                        <tr>
+                            {% for day in week %}
+                            {% if day == 0 %}
+                            <td class="p-2 border border-gray-200 text-center text-gray-300"></td>
+                            {% else %}
+                            {% set current_date = date(today.year, today.month, day) %}
+                            {% set has_bookings = current_date in booking_dates %}
+                            <td class="p-2 border border-gray-200 text-center cursor-pointer hover:bg-blue-50 transition-colors {{ 'bg-blue-100' if has_bookings else '' }}">
+                                <a href="{{ url_for('main.date_bookings', year=today.year, month=today.month, day=day) }}" class="block w-full h-full flex items-center justify-center text-sm font-medium {{ 'text-blue-600' if current_date == today else 'text-gray-800' }} {{ 'bg-blue-100' if has_bookings else '' }} hover:bg-blue-50 transition-colors">
+                                    {{ day }}
+                                </a>
+                            </td>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Quick Access Counters -->
+        {% if current_user.is_authenticated %}
+        <div class="grid grid-cols-3 gap-4">
+            <div class="bg-white shadow-lg rounded-xl p-4 text-center">
+                <p class="text-xs font-medium text-gray-600">Total Bookings</p>
+                <p class="text-lg font-bold text-gray-800">{{ total_count }}</p>
+            </div>
+            <div class="bg-white shadow-lg rounded-xl p-4 text-center">
+                <p class="text-xs font-medium text-gray-600">AR Garden</p>
+                <p class="text-lg font-bold text-gray-800">{{ ar_count }}</p>
+            </div>
+            <div class="bg-white shadow-lg rounded-xl p-4 text-center">
+                <p class="text-xs font-medium text-gray-600">Diamond Palace</p>
+                <p class="text-lg font-bold text-gray-800">{{ diamond_count }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Column: Hall Cards -->
+    <div class="lg:col-span-2 space-y-6">
+        {% for hall in halls %}
+        {% set upcoming = upcoming_ar if hall.name == 'AR Garden' else upcoming_diamond %}
+        <div class="bg-gradient-to-br from-white to-gray-50 shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-1">{{ hall.name }}</h3>
+                        <p class="text-gray-600 text-sm">Professional wedding venue with day and night availability</p>
+                    </div>
+                    <a href="{{ url_for('main.hall', hall_id=hall.id) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200">
+                        View Calendar
+                    </a>
+                </div>
+
+                {% if upcoming %}
+                <div class="space-y-3">
+                    <h4 class="text-sm font-semibold text-gray-700">Upcoming Bookings</h4>
+                    {% for booking in upcoming %}
+                    <a href="{{ url_for('main.booking_detail', booking_id=booking.id) }}" class="block bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">{{ booking.client_name }}</p>
+                                <p class="text-xs text-gray-600">{{ booking.date.strftime('%d %b %Y') }} - {{ booking.time_slot.title() }}</p>
+                            </div>
+                            <span class="px-2 py-1 rounded text-xs font-medium
+                                {% if booking.status == 'confirmed' %}bg-green-100 text-green-800{% elif booking.status == 'pending' %}bg-yellow-100 text-yellow-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ booking.status.title() }}
+                            </span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-calendar-x text-3xl text-gray-300 mb-2"></i>
+                    <p class="text-sm text-gray-500">No upcoming bookings</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}

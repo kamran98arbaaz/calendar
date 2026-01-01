@@ -1,52 +1,114 @@
 {% extends "base.html" %}
 
+{% block head %}
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+{% endblock %}
+
 {% block content %}
-<h2>Booking Details</h2>
-<div class="card">
-    <div class="card-body">
-        <h5 class="card-title">BID: {{ booking.bid }}</h5>
-        <p><strong>Hall:</strong> {{ booking.hall.name }}</p>
-        <p><strong>Date:</strong> {{ booking.date.strftime('%d %b %Y') }}</p>
-        <p><strong>Time Slot:</strong> {{ booking.time_slot.title() }}</p>
-        <p><strong>Client Name:</strong> {{ booking.client_name }}</p>
-        <p><strong>Phone:</strong> {{ booking.phone }}</p>
-        <p><strong>Address:</strong> {{ booking.address }}</p>
-        <p><strong>Status:</strong> {{ booking.status.title() }}</p>
-        <p><strong>Booked on:</strong> {{ booking.created_at.strftime('%d %b %Y at %I:%M %p') }}</p>
-        {% if booking.confirmed_at %}
-        <p><strong>Confirmed on:</strong> {{ booking.confirmed_at.strftime('%d %b %Y at %I:%M %p') }}</p>
+<div class="max-w-4xl mx-auto">
+    <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">Booking Details</h2>
+    <div class="bg-white shadow-lg rounded-xl p-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg shadow-inner">
+                <h3 class="text-xl font-semibold text-blue-800 mb-6 flex items-center">
+                    <i class="bi bi-info-circle-fill mr-2"></i>Booking Information
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                        <span class="font-medium text-gray-700 flex items-center"><i class="bi bi-hash mr-2 text-blue-600"></i>BID:</span>
+                        <span class="text-gray-800 font-semibold">{{ booking.bid }}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                        <span class="font-medium text-gray-700 flex items-center"><i class="bi bi-building mr-2 text-blue-600"></i>Hall:</span>
+                        <span class="text-gray-800 font-semibold">{{ booking.hall.name }}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                        <span class="font-medium text-gray-700 flex items-center"><i class="bi bi-calendar-date mr-2 text-blue-600"></i>Date:</span>
+                        <span class="text-gray-800 font-semibold">{{ booking.date.strftime('%d %b %Y') }}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                        <span class="font-medium text-gray-700 flex items-center"><i class="bi bi-clock mr-2 text-blue-600"></i>Time Slot:</span>
+                        <span class="text-gray-800 font-semibold">{{ booking.time_slot.title() }}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                        <span class="font-medium text-gray-700 flex items-center"><i class="bi bi-check-circle mr-2 text-blue-600"></i>Status:</span>
+                        <span class="px-3 py-1 rounded-full text-sm font-medium
+                            {% if booking.status == 'confirmed' %}bg-green-100 text-green-800{% elif booking.status == 'pending' %}bg-yellow-100 text-yellow-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ booking.status.title() }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg shadow-inner">
+                <h3 class="text-xl font-semibold text-green-800 mb-6 flex items-center">
+                    <i class="bi bi-person-fill mr-2"></i>Client Information
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                        <span class="font-medium text-gray-700 flex items-center"><i class="bi bi-person mr-2 text-green-600"></i>Name:</span>
+                        <span class="text-gray-800 font-semibold">{{ booking.client_name }}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                        <span class="font-medium text-gray-700 flex items-center"><i class="bi bi-telephone mr-2 text-green-600"></i>Phone:</span>
+                        <span class="text-gray-800 font-semibold">{{ booking.phone }}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                        <span class="font-medium text-gray-700 flex items-center"><i class="bi bi-geo-alt mr-2 text-green-600"></i>Address:</span>
+                        <span class="text-gray-800 font-semibold text-right">{{ booking.address }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-6 pt-6 border-t border-gray-200">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Timeline</h3>
+            <div class="space-y-2">
+                <div class="flex justify-between">
+                    <span class="font-medium text-gray-600">Booked on:</span>
+                    <span class="text-gray-800">{{ booking.created_at | format_datetime }}</span>
+                </div>
+                {% if booking.confirmed_at %}
+                <div class="flex justify-between">
+                    <span class="font-medium text-gray-600">Confirmed on:</span>
+                    <span class="text-gray-800">{{ booking.confirmed_at | format_datetime }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="mt-8 flex flex-wrap gap-4 justify-center">
+        {% if booking.status == 'pending' %}
+        <button type="button" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors duration-200" data-bs-toggle="modal" data-bs-target="#confirmModal">Confirm Booking</button>
+        {% endif %}
+        <a href="{{ url_for('main.print_receipt', booking_id=booking.id) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200" target="_blank">Print Receipt</a>
+        <a href="{{ url_for('main.edit_booking', booking_id=booking.id) }}" class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg transition-colors duration-200">Edit</a>
+        {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('main.delete_booking', booking_id=booking.id) }}" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors duration-200">Delete</a>
         {% endif %}
     </div>
 </div>
-<div class="mt-3">
-    {% if booking.status == 'pending' %}
-    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmModal">Confirm Booking</button>
-    {% endif %}
-    <a href="{{ url_for('main.print_receipt', booking_id=booking.id) }}" class="btn btn-info" target="_blank">Print Receipt</a>
-    <a href="{{ url_for('main.edit_booking', booking_id=booking.id) }}" class="btn btn-warning">Edit</a>
-    {% if current_user.role == 'admin' %}
-    <a href="{{ url_for('main.delete_booking', booking_id=booking.id) }}" class="btn btn-danger">Delete</a>
-    {% endif %}
-</div>
 
 <!-- Confirmation Modal -->
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmModalLabel">Confirm Booking</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        Are you sure you want to confirm this booking? This action cannot be undone.
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <form action="{{ url_for('main.confirm_booking', booking_id=booking.id) }}" method="post" style="display:inline;">
-          <button type="submit" class="btn btn-success">Yes, Confirm</button>
-        </form>
-      </div>
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden" id="confirmModal">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+        <h3 class="text-xl font-semibold text-gray-800 mb-4">Confirm Booking</h3>
+        <p class="text-gray-600 mb-6">Are you sure you want to confirm this booking? This action cannot be undone.</p>
+        <div class="flex justify-end space-x-4">
+            <button type="button" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200" onclick="closeModal()">Cancel</button>
+            <form action="{{ url_for('main.confirm_booking', booking_id=booking.id) }}" method="post">
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">Yes, Confirm</button>
+            </form>
+        </div>
     </div>
-  </div>
 </div>
+
+<script>
+function closeModal() {
+    document.getElementById('confirmModal').classList.add('hidden');
+}
+document.querySelector('[data-bs-target="#confirmModal"]').addEventListener('click', function() {
+    document.getElementById('confirmModal').classList.remove('hidden');
+});
+</script>
 {% endblock %}

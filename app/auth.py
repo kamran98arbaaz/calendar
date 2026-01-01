@@ -31,6 +31,7 @@ def login():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
             login_user(user)
+            flash('Logged in successfully!', 'success')
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('main.index'))
         flash('Invalid username or password')
@@ -63,4 +64,5 @@ def register():
 @login_required
 def logout():
     logout_user()
+    flash('Logged out successfully!', 'success')
     return redirect(url_for('main.index'))
