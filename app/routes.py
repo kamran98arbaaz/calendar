@@ -7,6 +7,7 @@ from wtforms.validators import DataRequired
 from flask_wtf import FlaskForm
 from datetime import date, timezone
 import calendar
+from sqlalchemy import func
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -25,6 +26,10 @@ class BookingForm(FlaskForm):
 @main.route('/')
 def index():
     halls = Hall.query.all()
+    hall_dict = {h.name: h for h in halls}
+    ar_garden = hall_dict.get('AR Garden')
+    diamond_palace = hall_dict.get('Diamond Palace')
+
     # Booking counter logic for current month
     today = current_ist().date()
     start_date = date(today.year, today.month, 1)
@@ -32,25 +37,25 @@ def index():
         end_date = date(today.year + 1, 1, 1)
     else:
         end_date = date(today.year, today.month + 1, 1)
-    ar_garden = Hall.query.filter_by(name='AR Garden').first()
-    diamond_palace = Hall.query.filter_by(name='Diamond Palace').first()
-    ar_count = Booking.query.filter(Booking.hall_id == ar_garden.id if ar_garden else 0, Booking.date >= start_date, Booking.date < end_date).count() if ar_garden else 0
-    diamond_count = Booking.query.filter(Booking.hall_id == diamond_palace.id if diamond_palace else 0, Booking.date >= start_date, Booking.date < end_date).count() if diamond_palace else 0
+
+    # Optimized count query
+    booking_counts = db.session.query(Booking.hall_id, func.count(Booking.id)).filter(Booking.date >= start_date, Booking.date < end_date).group_by(Booking.hall_id).all()
+    count_dict = {hid: cnt for hid, cnt in booking_counts}
+    ar_count = count_dict.get(ar_garden.id if ar_garden else 0, 0)
+    diamond_count = count_dict.get(diamond_palace.id if diamond_palace else 0, 0)
     total_count = ar_count + diamond_count
 
-    # Upcoming bookings for each hall
-    upcoming_ar = []
-    upcoming_diamond = []
-    if ar_garden:
-        upcoming_ar = Booking.query.filter(Booking.hall_id == ar_garden.id, Booking.date >= today).order_by(Booking.date).limit(2).all()
-    if diamond_palace:
-        upcoming_diamond = Booking.query.filter(Booking.hall_id == diamond_palace.id, Booking.date >= today).order_by(Booking.date).limit(2).all()
+    # Upcoming bookings for each hall - optimized
+    hall_ids = [h.id for h in halls if h]
+    upcoming = db.session.query(Booking).filter(Booking.date >= today, Booking.hall_id.in_(hall_ids)).order_by(Booking.date).limit(4).all()
+    upcoming_ar = [b for b in upcoming if ar_garden and b.hall_id == ar_garden.id][:2]
+    upcoming_diamond = [b for b in upcoming if diamond_palace and b.hall_id == diamond_palace.id][:2]
 
-    # Bookings for mini calendar
+    # Bookings for mini calendar - optimized
     start_of_month = date(today.year, today.month, 1)
     end_of_month = date(today.year if today.month < 12 else today.year + 1, today.month % 12 + 1, 1)
-    month_bookings = Booking.query.filter(Booking.date >= start_of_month, Booking.date < end_of_month).all()
-    booking_dates = {b.date for b in month_bookings}
+    booking_dates_query = db.session.query(Booking.date).filter(Booking.date >= start_of_month, Booking.date < end_of_month).distinct().all()
+    booking_dates = {d[0] for d in booking_dates_query}
 
     return render_template('index.html', halls=halls, ar_count=ar_count, diamond_count=diamond_count, total_count=total_count, upcoming_ar=upcoming_ar, upcoming_diamond=upcoming_diamond, today=today, calendar=calendar, date=date, Booking=Booking, booking_dates=booking_dates)
 
