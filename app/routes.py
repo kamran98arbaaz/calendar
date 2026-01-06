@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from app import db
 from app.models import Booking, Hall, User, IST, current_ist, current_utc
-from wtforms import StringField, TextAreaField, SelectField, SubmitField, DateField
+from wtforms import StringField, TextAreaField, SelectField, SubmitField, DateField, FloatField
 from wtforms.validators import DataRequired
 from flask_wtf import FlaskForm
 from datetime import date, timezone
@@ -21,6 +21,9 @@ class BookingForm(FlaskForm):
     phone = StringField('Phone Number', validators=[DataRequired()])
     address = TextAreaField('Address', validators=[DataRequired()])
     time_slot = SelectField('Time Slot', choices=[('day', 'Day'), ('night', 'Night')], validators=[DataRequired()])
+    advance_paid = FloatField('Advance Paid', default=0.0)
+    balance = FloatField('Balance', default=0.0)
+    total = FloatField('Total', default=0.0)
     submit = SubmitField('Book')
 
 @main.route('/')
@@ -108,7 +111,10 @@ def book(hall_id, year, month, day):
             phone=form.phone.data,
             address=form.address.data,
             user_id=current_user.id,
-            created_at=current_utc()
+            created_at=current_utc(),
+            advance_paid=form.advance_paid.data,
+            balance=form.balance.data,
+            total=form.total.data
         )
         db.session.add(booking)
         db.session.commit()
@@ -137,6 +143,9 @@ def edit_booking(booking_id):
         booking.client_name = form.client_name.data
         booking.phone = form.phone.data
         booking.address = form.address.data
+        booking.advance_paid = form.advance_paid.data
+        booking.balance = form.balance.data
+        booking.total = form.total.data
         db.session.commit()
         flash('Booking updated')
         return redirect(url_for('main.booking_detail', booking_id=booking.id))
@@ -258,10 +267,9 @@ def print_receipt(booking_id):
         return redirect(url_for('main.index'))
 
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=30, bottomMargin=30, leftMargin=30, rightMargin=30)
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle('Title', parent=styles['Heading1'], alignment=1, fontSize=18)
-    normal_style = styles['Normal']
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], alignment=1, fontSize=18, fontName='Helvetica-Bold')
 
     elements = []
 
@@ -275,8 +283,9 @@ def print_receipt(booking_id):
     if booking.confirmed_at:
         confirmed_at_ist = booking.confirmed_at.replace(tzinfo=timezone.utc).astimezone(IST) if booking.confirmed_at.tzinfo is None else booking.confirmed_at.astimezone(IST)
 
-    # Booking Details
+    # Booking Details Table
     data = [
+        ['Booking Details', ''],
         ['BID:', booking.bid],
         ['Hall:', booking.hall.name],
         ['Date:', booking.date.strftime('%d %b %Y')],
@@ -290,18 +299,67 @@ def print_receipt(booking_id):
     if confirmed_at_ist:
         data.append(['Confirmed on:', confirmed_at_ist.strftime('%d %b %Y at %I:%M %p')])
 
-    table = Table(data, colWidths=[100, 300])
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 12),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-    ]))
+    style_commands = [
+        ('SPAN', (0, 0), (1, 0)),  # Merge header row
+        ('BACKGROUND', (0, 0), (1, 0), colors.lightgrey),  # Header row
+        ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (1, 0), 12),
+        ('ALIGN', (0, 0), (1, 0), 'CENTER'),  # Center the merged header
+        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('FONTNAME', (1, 1), (1, 1), 'Helvetica-Bold'),  # Bold BID
+        # Highlight Date
+        ('BACKGROUND', (0, 3), (-1, 3), colors.lightgrey),
+        ('FONTNAME', (0, 3), (1, 3), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 3), (1, 3), 12),
+        # Highlight Booked on
+        ('BACKGROUND', (0, 9), (-1, 9), colors.lightgrey),
+        ('FONTNAME', (0, 9), (1, 9), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 9), (1, 9), 12),
+    ]
+    if confirmed_at_ist:
+        # Highlight Confirmed on
+        style_commands.extend([
+            ('BACKGROUND', (0, 10), (-1, 10), colors.lightgrey),
+            ('FONTNAME', (0, 10), (1, 10), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 10), (1, 10), 12),
+        ])
+
+    table = Table(data, colWidths=[120, 300])
+    table.setStyle(TableStyle(style_commands))
     elements.append(table)
+
+    elements.append(Spacer(1, 15))
+
+    # Payment Information Table
+    payment_data = [
+        ['Payment Information', ''],
+        ['Advance Paid:', f'{booking.advance_paid or 0:.2f}'],
+        ['Balance:', f'{booking.balance or 0:.2f}'],
+        ['Total:', f'{booking.total or 0:.2f}'],
+    ]
+    payment_table = Table(payment_data, colWidths=[120, 300])
+    payment_table.setStyle(TableStyle([
+        ('SPAN', (0, 0), (1, 0)),  # Merge header row
+        ('BACKGROUND', (0, 0), (1, 0), colors.lightgrey),  # Header row
+        ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (1, 0), 12),
+        ('ALIGN', (0, 0), (1, 0), 'CENTER'),  # Center the merged header
+        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('FONTNAME', (1, 1), (1, -1), 'Helvetica-Bold'),  # Bold the amount column
+    ]))
+    elements.append(payment_table)
 
     doc.build(elements)
     buffer.seek(0)

@@ -44,6 +44,9 @@ class Booking(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=current_utc)
     confirmed_at = db.Column(db.DateTime, nullable=True)
+    advance_paid = db.Column(db.Float, nullable=True, default=0.0)
+    balance = db.Column(db.Float, nullable=True, default=0.0)
+    total = db.Column(db.Float, nullable=True, default=0.0)
 
     hall = db.relationship('Hall', backref=db.backref('bookings', lazy=True))
     user = db.relationship('User', backref=db.backref('bookings', lazy=True))

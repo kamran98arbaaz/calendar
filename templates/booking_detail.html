@@ -60,6 +60,25 @@
                     </div>
                 </div>
             </div>
+            <div class="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-lg shadow-inner">
+                <h3 class="text-xl font-semibold text-orange-800 mb-6 flex items-center">
+                    <i class="bi bi-cash-coin mr-2"></i>Payment Information
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                        <span class="font-medium text-gray-700 flex items-center"><i class="bi bi-cash mr-2 text-orange-600"></i>Advance Paid:</span>
+                        <span class="text-gray-800 font-semibold">₹{{ "%.2f"|format(booking.advance_paid or 0) }}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                        <span class="font-medium text-gray-700 flex items-center"><i class="bi bi-wallet mr-2 text-orange-600"></i>Balance:</span>
+                        <span class="text-gray-800 font-semibold">₹{{ "%.2f"|format(booking.balance or 0) }}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                        <span class="font-medium text-gray-700 flex items-center"><i class="bi bi-calculator mr-2 text-orange-600"></i>Total:</span>
+                        <span class="text-gray-800 font-semibold">₹{{ "%.2f"|format(booking.total or 0) }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="mt-6 pt-6 border-t border-gray-200">
             <h3 class="text-xl font-semibold text-gray-800 mb-4">Timeline</h3>
