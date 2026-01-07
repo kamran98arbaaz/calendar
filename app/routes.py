@@ -273,93 +273,101 @@ def print_receipt(booking_id):
 
     elements = []
 
-    # Title
-    elements.append(Paragraph("Wedding Hall Booking Receipt", title_style))
-    elements.append(Spacer(1, 12))
-
     # Convert timestamps to IST
     created_at_ist = booking.created_at.replace(tzinfo=timezone.utc).astimezone(IST) if booking.created_at.tzinfo is None else booking.created_at.astimezone(IST)
     confirmed_at_ist = None
     if booking.confirmed_at:
         confirmed_at_ist = booking.confirmed_at.replace(tzinfo=timezone.utc).astimezone(IST) if booking.confirmed_at.tzinfo is None else booking.confirmed_at.astimezone(IST)
 
-    # Booking Details Table
-    data = [
-        ['Booking Details', ''],
-        ['BID:', booking.bid],
-        ['Hall:', booking.hall.name],
-        ['Date:', booking.date.strftime('%d %b %Y')],
-        ['Time Slot:', booking.time_slot.title()],
-        ['Client Name:', booking.client_name],
-        ['Phone:', booking.phone],
-        ['Address:', booking.address],
-        ['Status:', booking.status.title()],
-        ['Booked on:', created_at_ist.strftime('%d %b %Y at %I:%M %p')],
-    ]
-    if confirmed_at_ist:
-        data.append(['Confirmed on:', confirmed_at_ist.strftime('%d %b %Y at %I:%M %p')])
+    # Function to create booking details table
+    def create_booking_table():
+        data = [
+            ['Booking Details', ''],
+            ['BID:', booking.bid],
+            ['Hall:', booking.hall.name],
+            ['Date:', booking.date.strftime('%d %b %Y')],
+            ['Time Slot:', booking.time_slot.title()],
+            ['Client Name:', booking.client_name],
+            ['Phone:', booking.phone],
+            ['Address:', booking.address],
+            ['Status:', booking.status.title()],
+            ['Booked on:', created_at_ist.strftime('%d %b %Y at %I:%M %p')],
+        ]
+        if confirmed_at_ist:
+            data.append(['Confirmed on:', confirmed_at_ist.strftime('%d %b %Y at %I:%M %p')])
 
-    style_commands = [
-        ('SPAN', (0, 0), (1, 0)),  # Merge header row
-        ('BACKGROUND', (0, 0), (1, 0), colors.lightgrey),  # Header row
-        ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (1, 0), 12),
-        ('ALIGN', (0, 0), (1, 0), 'CENTER'),  # Center the merged header
-        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
-        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
-        ('FONTSIZE', (0, 1), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('FONTNAME', (1, 1), (1, 1), 'Helvetica-Bold'),  # Bold BID
-        # Highlight Date
-        ('BACKGROUND', (0, 3), (-1, 3), colors.lightgrey),
-        ('FONTNAME', (0, 3), (1, 3), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 3), (1, 3), 12),
-        # Highlight Booked on
-        ('BACKGROUND', (0, 9), (-1, 9), colors.lightgrey),
-        ('FONTNAME', (0, 9), (1, 9), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 9), (1, 9), 12),
-    ]
-    if confirmed_at_ist:
-        # Highlight Confirmed on
-        style_commands.extend([
-            ('BACKGROUND', (0, 10), (-1, 10), colors.lightgrey),
-            ('FONTNAME', (0, 10), (1, 10), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 10), (1, 10), 12),
-        ])
+        style_commands = [
+            ('SPAN', (0, 0), (1, 0)),  # Merge header row
+            ('BACKGROUND', (0, 0), (1, 0), colors.lightgrey),  # Header row
+            ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (1, 0), 10),
+            ('ALIGN', (0, 0), (1, 0), 'CENTER'),  # Center the merged header
+            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+            ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTNAME', (1, 1), (1, 1), 'Helvetica-Bold'),  # Bold BID
+            # Highlight Hall
+            ('BACKGROUND', (0, 2), (-1, 2), colors.lightgrey),
+            ('FONTNAME', (0, 2), (1, 2), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 2), (1, 2), 10),
+            # Highlight Date
+            ('BACKGROUND', (0, 3), (-1, 3), colors.lightgrey),
+            ('FONTNAME', (0, 3), (1, 3), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 3), (1, 3), 10),
+        ]
 
-    table = Table(data, colWidths=[120, 300])
-    table.setStyle(TableStyle(style_commands))
-    elements.append(table)
+        table = Table(data, colWidths=[120, 300])
+        table.setStyle(TableStyle(style_commands))
+        return table
 
+    # Function to create payment table
+    def create_payment_table():
+        payment_data = [
+            ['Payment Information', ''],
+            ['Total:', f'{booking.total or 0:.2f}'],
+            ['Advance Paid:', f'{booking.advance_paid or 0:.2f}'],
+            ['Balance:', f'{booking.balance or 0:.2f}'],
+        ]
+        payment_table = Table(payment_data, colWidths=[120, 300])
+        payment_table.setStyle(TableStyle([
+            ('SPAN', (0, 0), (1, 0)),  # Merge header row
+            ('BACKGROUND', (0, 0), (1, 0), colors.lightgrey),  # Header row
+            ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (1, 0), 10),
+            ('ALIGN', (0, 0), (1, 0), 'CENTER'),  # Center the merged header
+            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+            ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTNAME', (1, 1), (1, -1), 'Helvetica-Bold'),  # Bold the amount column
+        ]))
+        return payment_table
+
+    # Company Copy
+    elements.append(create_booking_table())
+    elements.append(Spacer(1, 10))
+    elements.append(create_payment_table())
     elements.append(Spacer(1, 15))
 
-    # Payment Information Table
-    payment_data = [
-        ['Payment Information', ''],
-        ['Advance Paid:', f'{booking.advance_paid or 0:.2f}'],
-        ['Balance:', f'{booking.balance or 0:.2f}'],
-        ['Total:', f'{booking.total or 0:.2f}'],
-    ]
-    payment_table = Table(payment_data, colWidths=[120, 300])
-    payment_table.setStyle(TableStyle([
-        ('SPAN', (0, 0), (1, 0)),  # Merge header row
-        ('BACKGROUND', (0, 0), (1, 0), colors.lightgrey),  # Header row
-        ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (1, 0), 12),
-        ('ALIGN', (0, 0), (1, 0), 'CENTER'),  # Center the merged header
-        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
-        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
-        ('FONTSIZE', (0, 1), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('FONTNAME', (1, 1), (1, -1), 'Helvetica-Bold'),  # Bold the amount column
+    # Line break
+    line_table = Table([['']], colWidths=[420])
+    line_table.setStyle(TableStyle([
+        ('LINEBELOW', (0, 0), (-1, -1), 1, colors.black),
     ]))
-    elements.append(payment_table)
+    elements.append(line_table)
+    elements.append(Spacer(1, 15))
+
+    # Customer Copy
+    elements.append(create_booking_table())
+    elements.append(Spacer(1, 10))
+    elements.append(create_payment_table())
 
     doc.build(elements)
     buffer.seek(0)
