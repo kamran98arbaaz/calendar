@@ -19,7 +19,13 @@
 
         <!-- Mini Calendar -->
         <div class="bg-white shadow-lg rounded-xl p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Calendar - {{ today.strftime('%B %Y') }}</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex justify-between items-center">
+                Calendar - {{ date(year, month, 1).strftime('%B %Y') }}
+                <div class="flex space-x-2">
+                    <a href="{{ url_for('main.index', year=prev_year, month=prev_month) }}" class="text-gray-600 hover:text-gray-800 text-xl"><</a>
+                    <a href="{{ url_for('main.index', year=next_year, month=next_month) }}" class="text-gray-600 hover:text-gray-800 text-xl">></a>
+                </div>
+            </h3>
             <div class="calendar-container">
                 <table class="w-full border-collapse">
                     <thead>
@@ -34,16 +40,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for week in calendar.monthcalendar(today.year, today.month) %}
+                        {% for week in calendar.monthcalendar(year, month) %}
                         <tr>
                             {% for day in week %}
                             {% if day == 0 %}
                             <td class="p-2 border border-gray-200 text-center text-gray-300"></td>
                             {% else %}
-                            {% set current_date = date(today.year, today.month, day) %}
+                            {% set current_date = date(year, month, day) %}
                             {% set has_bookings = current_date in booking_dates %}
                             <td class="p-2 border border-gray-200 text-center cursor-pointer hover:bg-blue-50 transition-colors {{ 'bg-blue-100' if has_bookings else '' }}">
-                                <a href="{{ url_for('main.date_bookings', year=today.year, month=today.month, day=day) }}" class="block w-full h-full flex items-center justify-center text-sm font-medium {{ 'text-blue-600' if current_date == today else 'text-gray-800' }} {{ 'bg-blue-100' if has_bookings else '' }} hover:bg-blue-50 transition-colors">
+                                <a href="{{ url_for('main.date_bookings', year=year, month=month, day=day) }}" class="block w-full h-full flex items-center justify-center text-sm font-medium {{ 'text-blue-600' if current_date == today else 'text-gray-800' }} {{ 'bg-blue-100' if has_bookings else '' }} hover:bg-blue-50 transition-colors">
                                     {{ day }}
                                 </a>
                             </td>
@@ -57,22 +63,24 @@
         </div>
 
         <!-- Quick Access Counters -->
-        {% if current_user.is_authenticated %}
         <div class="grid grid-cols-3 gap-4">
-            <div class="bg-white shadow-lg rounded-xl p-4 text-center">
+            <a href="{{ url_for('main.monthly_bookings_total', year=year, month=month) }}" class="bg-white shadow-lg rounded-xl p-4 text-center hover:bg-gray-50 transition-colors block">
                 <p class="text-xs font-medium text-gray-600">Total Bookings</p>
                 <p class="text-lg font-bold text-gray-800">{{ total_count }}</p>
-            </div>
-            <div class="bg-white shadow-lg rounded-xl p-4 text-center">
+            </a>
+            {% if ar_garden %}
+            <a href="{{ url_for('main.monthly_hall_bookings', hall_id=ar_garden.id, year=year, month=month) }}" class="bg-white shadow-lg rounded-xl p-4 text-center hover:bg-gray-50 transition-colors block">
                 <p class="text-xs font-medium text-gray-600">AR Garden</p>
                 <p class="text-lg font-bold text-gray-800">{{ ar_count }}</p>
-            </div>
-            <div class="bg-white shadow-lg rounded-xl p-4 text-center">
+            </a>
+            {% endif %}
+            {% if diamond_palace %}
+            <a href="{{ url_for('main.monthly_hall_bookings', hall_id=diamond_palace.id, year=year, month=month) }}" class="bg-white shadow-lg rounded-xl p-4 text-center hover:bg-gray-50 transition-colors block">
                 <p class="text-xs font-medium text-gray-600">Diamond Palace</p>
                 <p class="text-lg font-bold text-gray-800">{{ diamond_count }}</p>
-            </div>
+            </a>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 
     <!-- Right Column: Hall Cards -->

@@ -33,13 +33,17 @@ def index():
     ar_garden = hall_dict.get('AR Garden')
     diamond_palace = hall_dict.get('Diamond Palace')
 
-    # Booking counter logic for current month
+    # Get year and month from params, default to current
     today = current_ist().date()
-    start_date = date(today.year, today.month, 1)
-    if today.month == 12:
-        end_date = date(today.year + 1, 1, 1)
+    year = request.args.get('year', today.year, type=int)
+    month = request.args.get('month', today.month, type=int)
+
+    # Booking counter logic for selected month
+    start_date = date(year, month, 1)
+    if month == 12:
+        end_date = date(year + 1, 1, 1)
     else:
-        end_date = date(today.year, today.month + 1, 1)
+        end_date = date(year, month + 1, 1)
 
     # Optimized count query
     booking_counts = db.session.query(Booking.hall_id, func.count(Booking.id)).filter(Booking.date >= start_date, Booking.date < end_date).group_by(Booking.hall_id).all()
@@ -55,12 +59,18 @@ def index():
     upcoming_diamond = [b for b in upcoming if diamond_palace and b.hall_id == diamond_palace.id][:2]
 
     # Bookings for mini calendar - optimized
-    start_of_month = date(today.year, today.month, 1)
-    end_of_month = date(today.year if today.month < 12 else today.year + 1, today.month % 12 + 1, 1)
+    start_of_month = date(year, month, 1)
+    end_of_month = date(year if month < 12 else year + 1, month % 12 + 1, 1)
     booking_dates_query = db.session.query(Booking.date).filter(Booking.date >= start_of_month, Booking.date < end_of_month).distinct().all()
     booking_dates = {d[0] for d in booking_dates_query}
 
-    return render_template('index.html', halls=halls, ar_count=ar_count, diamond_count=diamond_count, total_count=total_count, upcoming_ar=upcoming_ar, upcoming_diamond=upcoming_diamond, today=today, calendar=calendar, date=date, Booking=Booking, booking_dates=booking_dates)
+    # Calculate prev and next
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year - 1 if month == 1 else year
+    next_month = month + 1 if month < 12 else 1
+    next_year = year + 1 if month == 12 else year
+
+    return render_template('index.html', halls=halls, ar_count=ar_count, diamond_count=diamond_count, total_count=total_count, upcoming_ar=upcoming_ar, upcoming_diamond=upcoming_diamond, today=today, calendar=calendar, date=date, Booking=Booking, booking_dates=booking_dates, year=year, month=month, prev_year=prev_year, prev_month=prev_month, next_year=next_year, next_month=next_month, ar_garden=ar_garden, diamond_palace=diamond_palace)
 
 @main.route('/hall/<int:hall_id>')
 def hall(hall_id):
@@ -75,10 +85,10 @@ def hall(hall_id):
         end_date = date(year + 1, 1, 1)
     else:
         end_date = date(year, month + 1, 1)
-    all_bookings = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date).all()
+    all_bookings = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date).with_entities(Booking.id, Booking.date, Booking.time_slot).all()
     booking_dict = {(str(b.date), b.time_slot): b for b in all_bookings}
     month_name = calendar.month_name[month]
-    total = len(all_bookings)
+    total = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date).count()
     confirmed = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date, Booking.status == 'confirmed').count()
     pending = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date, Booking.status == 'pending').count()
     day = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date, Booking.time_slot == 'day').count()
@@ -426,11 +436,47 @@ def date_bookings(year, month, day):
     bookings = Booking.query.filter(Booking.date == selected_date).order_by(Booking.hall_id, Booking.time_slot).all()
     return render_template('booking_list.html', bookings=bookings, title=f'Bookings for {selected_date.strftime("%d %b %Y")}', year=year, month=month, hall=None)
 
+@main.route('/monthly/total/<int:year>/<int:month>')
+@login_required
+def monthly_bookings_total(year, month):
+    start_date = date(year, month, 1)
+    end_date = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+    bookings = Booking.query.filter(Booking.date >= start_date, Booking.date < end_date).order_by(Booking.date, Booking.hall_id, Booking.time_slot).all()
+    title = f'Total Bookings for {start_date.strftime("%B %Y")}'
+    return render_template('booking_list.html', bookings=bookings, title=title, year=year, month=month, hall=None)
+
+@main.route('/monthly/hall/<int:hall_id>/<int:year>/<int:month>')
+@login_required
+def monthly_hall_bookings(hall_id, year, month):
+    hall = Hall.query.get_or_404(hall_id)
+    start_date = date(year, month, 1)
+    end_date = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+    bookings = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date).order_by(Booking.date, Booking.time_slot).all()
+    title = f'{hall.name} Bookings for {start_date.strftime("%B %Y")}'
+    return render_template('booking_list.html', bookings=bookings, title=title, year=year, month=month, hall=hall)
+
 @main.route('/search', methods=['GET', 'POST'])
 @login_required
 def search():
     if request.method == 'POST':
-        query = request.form.get('query')
+        query = request.form.get('query').strip()
+        # Check if query is "Month Year"
+        parts = query.split()
+        if len(parts) == 2:
+            month_str, year_str = parts
+            try:
+                year = int(year_str)
+                month = next((i for i, name in enumerate(calendar.month_name) if name and name.lower() == month_str.lower()), None)
+                if month:
+                    # Valid month year
+                    start_date = date(year, month, 1)
+                    end_date = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+                    bookings = Booking.query.filter(Booking.date >= start_date, Booking.date < end_date).order_by(Booking.date, Booking.hall_id, Booking.time_slot).all()
+                    title = f'Bookings for {month_str} {year}'
+                    return render_template('booking_list.html', bookings=bookings, title=title, year=year, month=month, hall=None)
+            except ValueError:
+                pass
+        # Normal search
         bookings = Booking.query.filter(
             (Booking.bid.ilike(f'%{query}%')) |
             (Booking.client_name.ilike(f'%{query}%')) |

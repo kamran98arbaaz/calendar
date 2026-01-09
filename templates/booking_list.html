@@ -10,6 +10,7 @@
                 <tr>
                     <th class="px-6 py-4 text-left font-semibold">BID</th>
                     <th class="px-6 py-4 text-left font-semibold">Date</th>
+                    <th class="px-6 py-4 text-left font-semibold">Hall</th>
                     <th class="px-6 py-4 text-left font-semibold">Time Slot</th>
                     <th class="px-6 py-4 text-left font-semibold">Client</th>
                     <th class="px-6 py-4 text-left font-semibold">Status</th>
@@ -21,6 +22,7 @@
                 <tr class="border-b border-gray-200 hover:bg-gray-50">
                     <td class="px-6 py-4 text-gray-800">{{ booking.bid }}</td>
                     <td class="px-6 py-4 text-gray-800">{{ booking.date.strftime('%d %b %Y') }}</td>
+                    <td class="px-6 py-4 text-gray-800">{{ booking.hall.name }}</td>
                     <td class="px-6 py-4 text-gray-800">{{ booking.time_slot.title() }}</td>
                     <td class="px-6 py-4 text-gray-800">{{ booking.client_name }}</td>
                     <td class="px-6 py-4">
