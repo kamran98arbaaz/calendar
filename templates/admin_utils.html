@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">Admin Utilities</h2>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Backup Database -->
+        <div class="bg-gradient-to-br from-white to-gray-50 shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-100 p-3 rounded-lg mr-4">
+                        <i class="bi bi-database-down text-blue-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">Backup Database</h3>
+                        <p class="text-gray-600 text-sm">JSON + Schema</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 mb-6">Create a complete backup of the database including all data and table structures.</p>
+                <form method="post" action="{{ url_for('main.admin_backup') }}">
+                    {{ backup_form.hidden_tag() }}
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200">
+                        <i class="bi bi-download mr-2"></i>Create Backup
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Restore Database -->
+        <div class="bg-gradient-to-br from-white to-gray-50 shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-green-100 p-3 rounded-lg mr-4">
+                        <i class="bi bi-database-up text-green-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">Restore Database</h3>
+                        <p class="text-gray-600 text-sm">From Backup Files</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 mb-6">Restore the database from previously created backup files.</p>
+                <a href="{{ url_for('main.admin_restore') }}" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium inline-block text-center transition-colors duration-200">
+                    <i class="bi bi-upload mr-2"></i>Go to Restore
+                </a>
+            </div>
+        </div>
+
+        <!-- Export CSV -->
+        <div class="bg-gradient-to-br from-white to-gray-50 shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-200">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-purple-100 p-3 rounded-lg mr-4">
+                        <i class="bi bi-file-earmark-spreadsheet text-purple-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">Export CSV</h3>
+                        <p class="text-gray-600 text-sm">All Bookings Data</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 mb-6">Download all booking records as CSV file with payment information.</p>
+                <a href="{{ url_for('main.export_csv') }}" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium inline-block text-center transition-colors duration-200">
+                    <i class="bi bi-file-earmark-arrow-down mr-2"></i>Export CSV
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

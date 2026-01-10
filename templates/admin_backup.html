@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">Database Backup</h2>
+    <form method="post" class="bg-white shadow-lg rounded-xl p-6">
+        {{ form.hidden_tag() }}
+        <p class="text-gray-600 mb-4">Click to create a backup of the database (data in JSON, schema in SQL).</p>
+        {{ form.submit(class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg") }}
+    </form>
+</div>
+{% endblock %}

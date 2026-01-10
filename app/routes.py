@@ -1,8 +1,8 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, send_file
 from flask_login import login_required, current_user
 from app import db
 from app.models import Booking, Hall, User, IST, current_ist, current_utc
-from wtforms import StringField, TextAreaField, SelectField, SubmitField, DateField, FloatField
+from wtforms import StringField, TextAreaField, SelectField, SubmitField, DateField, FloatField, FileField
 from wtforms.validators import DataRequired
 from flask_wtf import FlaskForm
 from datetime import date, timezone
@@ -13,6 +13,11 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib import colors
 from io import BytesIO
+import os
+import json
+import datetime
+from sqlalchemy import create_engine, text, MetaData
+from zipfile import ZipFile
 
 main = Blueprint('main', __name__)
 
@@ -25,6 +30,14 @@ class BookingForm(FlaskForm):
     balance = FloatField('Balance', default=0.0)
     total = FloatField('Total', default=0.0)
     submit = SubmitField('Book')
+
+class BackupForm(FlaskForm):
+    submit = SubmitField('Create Backup')
+
+class RestoreForm(FlaskForm):
+    schema_file = FileField('Schema File (.sql)', validators=[DataRequired()])
+    data_file = FileField('Data File (.json)', validators=[DataRequired()])
+    submit = SubmitField('Restore Database')
 
 @main.route('/')
 def index():
@@ -399,7 +412,7 @@ def export_csv():
     writer = csv.writer(si)
 
     # Write header
-    writer.writerow(['BID', 'Hall', 'Date', 'Time Slot', 'Client Name', 'Phone', 'Address', 'Status', 'Booked On', 'Confirmed On'])
+    writer.writerow(['BID', 'Hall', 'Date', 'Time Slot', 'Client Name', 'Phone', 'Address', 'Status', 'Booked On', 'Confirmed On', 'Advance Paid', 'Balance', 'Total'])
 
     # Write data
     bookings = Booking.query.all()
@@ -416,17 +429,23 @@ def export_csv():
             booking.address,
             booking.status.title(),
             created_at_ist.strftime('%d %b %Y %H:%M') if created_at_ist else '',
-            confirmed_at_ist.strftime('%d %b %Y %H:%M') if confirmed_at_ist else ''
+            confirmed_at_ist.strftime('%d %b %Y %H:%M') if confirmed_at_ist else '',
+            booking.advance_paid or 0,
+            booking.balance or 0,
+            booking.total or 0
         ])
 
     output = si.getvalue()
     si.close()
 
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f'client_bookings_{timestamp}.csv'
+
     from flask import Response
     return Response(
         output,
         mimetype='text/csv',
-        headers={'Content-Disposition': 'attachment; filename=client_bookings.csv'}
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
     )
 
 @main.route('/date/<int:year>/<int:month>/<int:day>')
@@ -476,6 +495,13 @@ def search():
                     return render_template('booking_list.html', bookings=bookings, title=title, year=year, month=month, hall=None)
             except ValueError:
                 pass
+        # Check if query is a hall name
+        halls = Hall.query.all()
+        hall_match = next((h for h in halls if h.name.lower() == query.lower()), None)
+        if hall_match:
+            bookings = Booking.query.filter(Booking.hall_id == hall_match.id).order_by(Booking.date, Booking.time_slot).all()
+            title = f'Bookings for {hall_match.name}'
+            return render_template('booking_list.html', bookings=bookings, title=title, hall=hall_match)
         # Normal search
         bookings = Booking.query.filter(
             (Booking.bid.ilike(f'%{query}%')) |
@@ -484,3 +510,112 @@ def search():
         ).all()
         return render_template('search_results.html', bookings=bookings, query=query)
     return render_template('search.html')
+
+@main.route('/admin/utils')
+@login_required
+def admin_utils():
+    if current_user.role != 'admin':
+        flash('Access denied')
+        return redirect(url_for('main.index'))
+    backup_form = BackupForm()
+    return render_template('admin_utils.html', backup_form=backup_form)
+
+@main.route('/admin/backup', methods=['POST'])
+@login_required
+def admin_backup():
+    if current_user.role != 'admin':
+        flash('Access denied')
+        return redirect(url_for('main.index'))
+    DATABASE_URL = os.getenv('DATABASE_URL').replace('postgresql://', 'postgresql+pg8000://')
+    engine = create_engine(DATABASE_URL)
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # Export data to JSON
+    data = {}
+    with engine.connect() as conn:
+        for table_name in ['user', 'hall', 'booking']:
+            result = conn.execute(text(f'SELECT json_agg(row_to_json("{table_name}")) FROM "{table_name}"'))
+            table_data = result.fetchone()[0]
+            data[table_name] = table_data or []
+
+    # Create in-memory files
+    from io import BytesIO
+    from zipfile import ZipFile
+
+    # Data JSON
+    data_content = json.dumps(data, indent=2).encode('utf-8')
+
+    # Schema SQL - only user tables
+    schema_sql = ""
+    user_tables = ['user', 'hall', 'booking']
+    for table in metadata.sorted_tables:
+        if table.name in user_tables:
+            schema_sql += str(table) + ";\n\n"
+    schema_content = schema_sql.encode('utf-8')
+
+    # Create ZIP in memory
+    zip_buffer = BytesIO()
+    with ZipFile(zip_buffer, 'w') as zipf:
+        zipf.writestr(f'backup_data_{timestamp}.json', data_content)
+        zipf.writestr(f'backup_schema_{timestamp}.sql', schema_content)
+    zip_buffer.seek(0)
+
+    zip_filename = f'backup_{timestamp}.zip'
+    return send_file(zip_buffer, as_attachment=True, download_name=zip_filename, mimetype='application/zip')
+
+@main.route('/admin/restore', methods=['GET', 'POST'])
+@login_required
+def admin_restore():
+    if current_user.role != 'admin':
+        flash('Access denied')
+        return redirect(url_for('main.index'))
+    form = RestoreForm()
+    if form.validate_on_submit():
+        schema_file = form.schema_file.data
+        data_file = form.data_file.data
+
+        try:
+            # Read files into memory
+            schema_content = schema_file.read().decode('utf-8')
+            data_content = data_file.read().decode('utf-8')
+            data = json.loads(data_content)
+
+            DATABASE_URL = os.getenv('DATABASE_URL').replace('postgresql://', 'postgresql+pg8000://')
+            engine = create_engine(DATABASE_URL)
+
+            # Restore schema - only user tables
+            with engine.connect() as conn:
+                statements = [stmt.strip() for stmt in schema_content.split(';') if stmt.strip()]
+                for stmt in statements:
+                    if stmt and ('CREATE TABLE "user"' in stmt or 'CREATE TABLE "hall"' in stmt or 'CREATE TABLE "booking"' in stmt):
+                        conn.execute(text(stmt))
+                conn.commit()
+
+            # Restore data - delete in reverse dependency order, insert in dependency order
+            with engine.connect() as conn:
+                # Delete in reverse order
+                delete_order = ['booking', 'user', 'hall']
+                for table_name in delete_order:
+                    if table_name in data and data[table_name]:
+                        conn.execute(text(f'DELETE FROM "{table_name}"'))
+
+                # Insert in dependency order
+                insert_order = ['hall', 'user', 'booking']
+                for table_name in insert_order:
+                    if table_name in data and data[table_name]:
+                        for row in data[table_name]:
+                            columns = ', '.join(f'"{k}"' for k in row.keys())
+                            placeholders = ', '.join([f':{k}' for k in row.keys()])
+                            insert_sql = f'INSERT INTO "{table_name}" ({columns}) VALUES ({placeholders})'
+                            conn.execute(text(insert_sql), row)
+                conn.commit()
+
+            flash('Database restored successfully')
+        except Exception as e:
+            flash(f'Restore failed: {str(e)}')
+
+        return redirect(url_for('main.admin_restore'))
+    return render_template('admin_restore.html', form=form)

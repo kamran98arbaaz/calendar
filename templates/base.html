@@ -24,7 +24,7 @@
                 {% if current_user.is_authenticated %}
                     <span class="text-sm">Welcome, {{ current_user.name }}{% if current_user.role == 'admin' %} (Admin){% endif %}</span>
                     {% if current_user.role == 'admin' %}
-                    <a class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm" href="{{ url_for('main.export_csv') }}"><i class="bi bi-file-earmark-spreadsheet mr-1"></i>Export CSV</a>
+                    <a class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm" href="{{ url_for('main.admin_utils') }}"><i class="bi bi-gear mr-1"></i>Utils</a>
                     {% endif %}
                     <a class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm" href="{{ url_for('auth.logout') }}">Logout</a>
                 {% else %}
