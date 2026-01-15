@@ -53,6 +53,12 @@
     <div class="mt-8 text-center">
         {% if hall %}
         <a href="{{ url_for('main.hall', hall_id=hall.id) }}?year={{ year }}&month={{ month }}" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors duration-200">Back to Calendar</a>
+        {% elif year and month %}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
+            <a href="{{ url_for('main.hall', hall_id=halls[0].id) }}?year={{ year }}&month={{ month }}" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center">View {{ halls[0].name }} Calendar</a>
+            <a href="{{ url_for('main.hall', hall_id=halls[1].id) }}?year={{ year }}&month={{ month }}" class="bg-green-600 hover:bg-green-700 text-white px-3.5 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center">View {{ halls[1].name }} Calendar</a>
+            <a href="{{ url_for('main.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-3.5 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center">Back to Dashboard</a>
+        </div>
         {% else %}
         <a href="{{ url_for('main.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors duration-200">Back to Dashboard</a>
         {% endif %}

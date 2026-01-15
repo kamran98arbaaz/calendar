@@ -19,13 +19,21 @@
 
         <!-- Mini Calendar -->
         <div class="bg-white shadow-lg rounded-xl p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex justify-between items-center">
-                Calendar - {{ date(year, month, 1).strftime('%B %Y') }}
-                <div class="flex space-x-2">
-                    <a href="{{ url_for('main.index', year=prev_year, month=prev_month) }}" class="text-gray-600 hover:text-gray-800 text-xl"><</a>
-                    <a href="{{ url_for('main.index', year=next_year, month=next_month) }}" class="text-gray-600 hover:text-gray-800 text-xl">></a>
-                </div>
-            </h3>
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-lg font-semibold text-gray-800">Calendar</span>
+                <form method="GET" class="flex items-center space-x-2" id="calendarForm">
+                    <select name="year" onchange="this.form.submit()" class="bg-gray-100 border border-gray-300 rounded px-2 py-1 text-sm max-h-32 overflow-y-auto">
+                        {% for y in range(today.year, 2051) %}
+                        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="month" onchange="this.form.submit()" class="bg-gray-100 border border-gray-300 rounded px-2 py-1 text-sm">
+                        {% for m in range(1, 13) %}
+                        <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ calendar.month_name[m] }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
             <div class="calendar-container">
                 <table class="w-full border-collapse">
                     <thead>
@@ -128,4 +136,5 @@
         {% endfor %}
     </div>
 </div>
+
 {% endblock %}

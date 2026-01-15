@@ -39,6 +39,10 @@ class RestoreForm(FlaskForm):
     data_file = FileField('Data File (.json)', validators=[DataRequired()])
     submit = SubmitField('Restore Database')
 
+class SearchForm(FlaskForm):
+    query = StringField('Search', validators=[DataRequired()])
+    submit = SubmitField('Search')
+
 @main.route('/')
 def index():
     halls = Hall.query.all()
@@ -449,23 +453,22 @@ def export_csv():
     )
 
 @main.route('/date/<int:year>/<int:month>/<int:day>')
-@login_required
 def date_bookings(year, month, day):
     selected_date = date(year, month, day)
     bookings = Booking.query.filter(Booking.date == selected_date).order_by(Booking.hall_id, Booking.time_slot).all()
-    return render_template('booking_list.html', bookings=bookings, title=f'Bookings for {selected_date.strftime("%d %b %Y")}', year=year, month=month, hall=None)
+    halls = Hall.query.all()
+    return render_template('booking_list.html', bookings=bookings, title=f'Bookings for {selected_date.strftime("%d %b %Y")}', year=year, month=month, hall=None, halls=halls)
 
 @main.route('/monthly/total/<int:year>/<int:month>')
-@login_required
 def monthly_bookings_total(year, month):
     start_date = date(year, month, 1)
     end_date = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
     bookings = Booking.query.filter(Booking.date >= start_date, Booking.date < end_date).order_by(Booking.date, Booking.hall_id, Booking.time_slot).all()
     title = f'Total Bookings for {start_date.strftime("%B %Y")}'
-    return render_template('booking_list.html', bookings=bookings, title=title, year=year, month=month, hall=None)
+    halls = Hall.query.all()
+    return render_template('booking_list.html', bookings=bookings, title=title, year=year, month=month, hall=None, halls=halls)
 
 @main.route('/monthly/hall/<int:hall_id>/<int:year>/<int:month>')
-@login_required
 def monthly_hall_bookings(hall_id, year, month):
     hall = Hall.query.get_or_404(hall_id)
     start_date = date(year, month, 1)
@@ -475,7 +478,6 @@ def monthly_hall_bookings(hall_id, year, month):
     return render_template('booking_list.html', bookings=bookings, title=title, year=year, month=month, hall=hall)
 
 @main.route('/search', methods=['GET', 'POST'])
-@login_required
 def search():
     if request.method == 'POST':
         query = request.form.get('query').strip()
@@ -492,7 +494,8 @@ def search():
                     end_date = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
                     bookings = Booking.query.filter(Booking.date >= start_date, Booking.date < end_date).order_by(Booking.date, Booking.hall_id, Booking.time_slot).all()
                     title = f'Bookings for {month_str} {year}'
-                    return render_template('booking_list.html', bookings=bookings, title=title, year=year, month=month, hall=None)
+                    halls = Hall.query.all()
+                    return render_template('booking_list.html', bookings=bookings, title=title, year=year, month=month, hall=None, halls=halls)
             except ValueError:
                 pass
         # Check if query is a hall name
@@ -509,7 +512,8 @@ def search():
             (Booking.phone.ilike(f'%{query}%'))
         ).all()
         return render_template('search_results.html', bookings=bookings, query=query)
-    return render_template('search.html')
+    form = SearchForm()
+    return render_template('search.html', form=form)
 
 @main.route('/admin/utils')
 @login_required
