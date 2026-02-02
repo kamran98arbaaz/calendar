@@ -105,12 +105,17 @@ def hall(hall_id):
     all_bookings = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date).with_entities(Booking.id, Booking.date, Booking.time_slot).all()
     booking_dict = {(str(b.date), b.time_slot): b for b in all_bookings}
     month_name = calendar.month_name[month]
-    total = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date).count()
-    confirmed = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date, Booking.status == 'confirmed').count()
-    pending = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date, Booking.status == 'pending').count()
-    day = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date, Booking.time_slot == 'day').count()
-    night = Booking.query.filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date, Booking.time_slot == 'night').count()
-    return render_template('hall.html', hall=hall, cal=cal, year=year, month=month, month_name=month_name, booking_dict=booking_dict, total=total, confirmed=confirmed, pending=pending, day=day, night=night)
+    
+    # Optimized: Single query for all stats instead of 5 separate queries
+    stats = db.session.query(
+        func.count(Booking.id).label('total'),
+        func.sum(func.cast(Booking.status == 'confirmed', db.Integer)).label('confirmed'),
+        func.sum(func.cast(Booking.status == 'pending', db.Integer)).label('pending'),
+        func.sum(func.cast(Booking.time_slot == 'day', db.Integer)).label('day'),
+        func.sum(func.cast(Booking.time_slot == 'night', db.Integer)).label('night')
+    ).filter(Booking.hall_id == hall_id, Booking.date >= start_date, Booking.date < end_date).first()
+    
+    return render_template('hall.html', hall=hall, cal=cal, year=year, month=month, month_name=month_name, booking_dict=booking_dict, total=stats.total or 0, confirmed=stats.confirmed or 0, pending=stats.pending or 0, day=stats.day or 0, night=stats.night or 0)
 
 @main.route('/book/<int:hall_id>/<int:year>/<int:month>/<int:day>', methods=['GET', 'POST'])
 @login_required
@@ -418,9 +423,9 @@ def export_csv():
     # Write header
     writer.writerow(['BID', 'Hall', 'Date', 'Time Slot', 'Client Name', 'Phone', 'Address', 'Status', 'Booked On', 'Confirmed On', 'Advance Paid', 'Balance', 'Total'])
 
-    # Write data
-    bookings = Booking.query.all()
-    for booking in bookings:
+    # Write data - use yield_per for memory-efficient streaming of large datasets
+    query = Booking.query.options(db.joinedload(Booking.hall)).order_by(Booking.date).yield_per(100)
+    for booking in query:
         created_at_ist = booking.created_at.replace(tzinfo=timezone.utc).astimezone(IST) if booking.created_at and booking.created_at.tzinfo is None else (booking.created_at.astimezone(IST) if booking.created_at else None)
         confirmed_at_ist = booking.confirmed_at.replace(tzinfo=timezone.utc).astimezone(IST) if booking.confirmed_at and booking.confirmed_at.tzinfo is None else (booking.confirmed_at.astimezone(IST) if booking.confirmed_at else None)
         writer.writerow([

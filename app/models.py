@@ -48,8 +48,8 @@ class Booking(db.Model):
     balance = db.Column(db.Float, nullable=True, default=0.0)
     total = db.Column(db.Float, nullable=True, default=0.0)
 
-    hall = db.relationship('Hall', backref=db.backref('bookings', lazy=True))
-    user = db.relationship('User', backref=db.backref('bookings', lazy=True))
+    hall = db.relationship('Hall', backref=db.backref('bookings', lazy='selectin', order_by='Booking.date'))
+    user = db.relationship('User', backref=db.backref('bookings', lazy='selectin'))
 
     @staticmethod
     def generate_bid():

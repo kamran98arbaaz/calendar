@@ -5,6 +5,13 @@ All notable changes to the Wedding Hall Booking System will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - Post-Production Enhancements - 2026-01-15
+
+- Fixed UI bugs in mini calendar dropdown and button layouts for better responsiveness
+- Removed login requirements for viewing booking lists while maintaining security for details
+- Enhanced button styling and alignment for improved user experience
+- Improved accessibility by allowing guests to browse booking information
+
 ## [0.1.0] - Production Release - 2026-01-10
 
 - Implemented robust database backup and restore functionality with JSON format

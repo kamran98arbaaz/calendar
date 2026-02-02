@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_compress import Compress
 import os
 from dotenv import load_dotenv
 from datetime import timezone
@@ -55,11 +56,30 @@ def create_app():
     else:
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Performance optimizations for Vercel serverless environment
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_size': 2,
+        'pool_recycle': 300,
+        'pool_pre_ping': True,
+        'max_overflow': 0,
+        'pool_timeout': 30
+    }
+    
+    # Enable response compression for smaller payload sizes
+    app.config['COMPRESS_ENABLED'] = True
+    app.config['COMPRESS_MIN_SIZE'] = 500
+    app.config['COMPRESS_BR_LEVEL'] = 6
 
     db.init_app(app)
     if MIGRATE_AVAILABLE:
         migrate.init_app(app, db)
     login_manager.init_app(app)
+    
+    # Initialize compression for faster response delivery
+    compress = Compress()
+    compress.init_app(app)
+    
     login_manager.login_view = 'auth.login'
 
     from app.models import User
