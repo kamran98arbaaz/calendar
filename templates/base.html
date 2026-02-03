@@ -121,7 +121,7 @@
     <nav class="bg-gray-800 text-white p-4">
         <div class="container mx-auto flex justify-between items-center">
             <a class="text-xl font-bold flex items-center" href="{{ url_for('main.index') }}">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-8 w-8 mr-2">
+                <img src="{{ url_for('static', filename='logo.png', v='2') }}" alt="Logo" class="h-8 w-8 mr-2">
                 Wedding Hall Booking
             </a>
             <div class="flex items-center space-x-4">
@@ -157,6 +157,14 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Function to show loader
+        function showLoader() {
+            const loader = document.getElementById('page-loader');
+            if (loader) {
+                loader.classList.remove('hidden');
+            }
+        }
+        
         // Function to hide loader
         function hideLoader() {
             const loader = document.getElementById('page-loader');
@@ -201,6 +209,22 @@
                     this.href.includes('#') || 
                     this.hasAttribute('onclick') ||
                     this.getAttribute('href') === '#') {
+                    return;
+                }
+                
+                // Show loading indicator
+                const loader = document.getElementById('page-loader');
+                if (loader) {
+                    loader.classList.remove('hidden');
+                }
+            });
+        });
+        
+        // Form submission loading indicator
+        document.querySelectorAll('form').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                // Skip loading for forms with no-loading class
+                if (this.classList.contains('no-loading')) {
                     return;
                 }
                 
