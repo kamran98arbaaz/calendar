@@ -109,8 +109,9 @@
 </div>
 
 <!-- Confirmation Modal -->
-<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden" id="confirmModal">
-    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+<div id="confirmModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeModal()"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
         <h3 class="text-xl font-semibold text-gray-800 mb-4">Confirm Booking</h3>
         <p class="text-gray-600 mb-6">Are you sure you want to confirm this booking? This action cannot be undone.</p>
         <div class="flex justify-end space-x-4">
@@ -123,11 +124,30 @@
 </div>
 
 <script>
+function openModal() {
+    document.getElementById('confirmModal').classList.remove('hidden');
+}
+
 function closeModal() {
     document.getElementById('confirmModal').classList.add('hidden');
 }
-document.querySelector('[data-bs-target="#confirmModal"]').addEventListener('click', function() {
-    document.getElementById('confirmModal').classList.remove('hidden');
+
+document.addEventListener('DOMContentLoaded', function() {
+    var confirmButton = document.querySelector('[data-bs-target="#confirmModal"]');
+    if (confirmButton) {
+        confirmButton.removeAttribute('data-bs-toggle');
+        confirmButton.removeAttribute('data-bs-target');
+        confirmButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            openModal();
+        });
+    }
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
 });
 </script>
 {% endblock %}

@@ -8,18 +8,16 @@ from flask_wtf import FlaskForm
 from datetime import date, timezone
 import calendar
 from sqlalchemy import func
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib import colors
-from io import BytesIO
 import os
 import json
 import datetime
-from sqlalchemy import create_engine, text, MetaData
-from zipfile import ZipFile
 
 main = Blueprint('main', __name__)
+
+# Lightweight warmup endpoint to keep Lambda warm (no heavy imports)
+@main.route('/api/warmup')
+def warmup():
+    return jsonify({'status': 'warm', 'timestamp': datetime.datetime.now().isoformat()})
 
 class BookingForm(FlaskForm):
     client_name = StringField('Client Name', validators=[DataRequired()])
@@ -293,6 +291,13 @@ def hall_bookings_night(hall_id):
 @main.route('/print_receipt/<int:booking_id>')
 @login_required
 def print_receipt(booking_id):
+    # Lazy import heavy PDF modules only when needed
+    from io import BytesIO
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib import colors
+    
     booking = Booking.query.get_or_404(booking_id)
     if current_user.role not in ['user', 'admin']:
         flash('Access denied')
@@ -535,6 +540,11 @@ def admin_backup():
     if current_user.role != 'admin':
         flash('Access denied')
         return redirect(url_for('main.index'))
+    
+    # Lazy import heavy database engine modules only when needed
+    from sqlalchemy import create_engine, text, MetaData
+    from io import BytesIO
+    
     DATABASE_URL = os.getenv('DATABASE_URL').replace('postgresql://', 'postgresql+pg8000://')
     engine = create_engine(DATABASE_URL)
     metadata = MetaData()
@@ -587,6 +597,9 @@ def admin_restore():
         data_file = form.data_file.data
 
         try:
+            # Lazy import heavy database engine modules only when needed
+            from sqlalchemy import create_engine, text
+            
             # Read files into memory
             schema_content = schema_file.read().decode('utf-8')
             data_content = data_file.read().decode('utf-8')
